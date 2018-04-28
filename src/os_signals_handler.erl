@@ -13,6 +13,11 @@ handle_event(sigterm, {Delay, Subscriber} = State) ->
     erlang:send_after(Delay, self(), stop),
     {ok, State}
     ;
+handle_event(sigquit, {Delay, Subscriber} = State) ->
+    io:format("#PID~p: SIGQUIT received. Halting in ~p ms.~n", [self(), Delay]),
+    erlang:send_after(Delay, self(), halt),
+    {ok, State}
+    ;
 handle_event(ErrorMsg, S) ->
     % everything else goes to default handler
     erl_signal_handler:handle_event(ErrorMsg, S),
@@ -21,6 +26,11 @@ handle_event(ErrorMsg, S) ->
 handle_info(stop, State) ->
     io:format("#PID~p: Stopping due to earlier SIGTERM.~n", [self()]),
     ok = init:stop(),
+    {ok, State}
+    ;
+handle_info(halt, State) ->
+    io:format("#PID~p: Halting due to earlier SIGQUIT.~n", [self()]),
+    erlang:halt(),
     {ok, State}
     ;
 handle_info(_, State) ->
